@@ -2,3 +2,4 @@
 *.egg-info
 *.generated
 **/__pycache__/**
+settings.json

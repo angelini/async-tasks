@@ -48,9 +48,11 @@ class Task(abc.ABC):
                     raise RuntimeError('cannot store invalid event')
 
             self.run(id, data, event['attributes'], context['timestamp'])
+            self.store.complete(self.name, id)
 
-        finally:
+        except Exception:
             self.store.release(self.name, id)
+            raise
 
     @abc.abstractmethod
     def schema(self) -> m.Schema:

@@ -32,10 +32,10 @@ class Storage:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS
                 locks (
-                    name        varchar(256),
-                    id          bigint,
-                    created_at  timestamp NOT NULL,
-                    released_at timestamp,
+                    name         varchar(256),
+                    id           bigint,
+                    created_at   timestamp NOT NULL,
+                    completed_at timestamp,
                     PRIMARY KEY (name, id)
                 );
 
@@ -55,7 +55,7 @@ class Storage:
         cursor = self.conn.cursor()
         try:
             cursor.execute('''
-                INSERT INTO locks (name, id, created_at, released_at)
+                INSERT INTO locks (name, id, created_at, completed_at)
                     VALUES (%s, %s, %s, %s);
             ''', (name, id, dt.datetime.now(), None))
             self.conn.commit()
@@ -70,22 +70,33 @@ class Storage:
                 WHERE name = %s
                   AND id = %s
                   AND created_at < %s
-                  AND released_at IS NULL
+                  AND completed_at IS NULL
             ''', (now, name, id, now - timeout))
             self.conn.commit()
             return bool(cursor.rowcount == 1)
 
         return False
 
-    def release(self, name: str, id: int) -> bool:
+    def complete(self, name: str, id: int) -> bool:
         cursor = self.conn.cursor()
         cursor.execute('''
             UPDATE locks
-                SET released_at = %s
+                SET completed_at = %s
             WHERE name = %s
               AND id = %s
-              AND released_at IS NULL;
+              AND completed_at IS NULL;
         ''', (dt.datetime.now(), name, id))
+        self.conn.commit()
+        return bool(cursor.rowcount == 1)
+
+    def release(self, name: str, id: int) -> bool:
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            DELETE FROM locks
+                WHERE name = %s
+                  AND id = %s
+                  AND completed_at IS NULL;
+        ''', (name, id))
         self.conn.commit()
         return bool(cursor.rowcount == 1)
 

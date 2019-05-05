@@ -65,6 +65,7 @@ import at_runner.storage as storage
 
 store = storage.Storage('postgres')
 store.setup()
+task = None
 """
 
     for task in project.tasks.values():
@@ -74,7 +75,8 @@ import {name}
 
 
 def execute_{name}(event, context):
-    task = {name}.TaskClass(store, '{name}', {timeout})
+    if not task:
+        task = {name}.TaskClass(store, '{name}', {timeout})
     task.lock_and_run(event, context)
 """.format(**{'name': task.name,
               'timeout': task.timeout})
